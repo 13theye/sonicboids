@@ -1,0 +1,11 @@
+[package]
+name = "sonicboids-render"
+version = "0.1.0"
+edition = "2024"
+authors = ["13th Eye <jjhh@13theye.com>"]
+
+
+[dependencies]
+rand = "0.9"
+rand_distr = "0.5"
+serde = { version = "1.0", features = ["derive"] }

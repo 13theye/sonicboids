@@ -1,0 +1,68 @@
+//! The Simulation agent for 2D space
+
+use super::SimParams;
+
+use nannou::prelude::*;
+
+/// Identifier for the `Agent`
+pub type AgentId = usize;
+
+pub struct Agent {
+    pub id: AgentId,
+    pub position: Vec2,
+    pub velocity: Vec2,
+    pub acceleration: Vec2,
+}
+
+impl Agent {
+    /// Applies a force to the `Agent`, consuming the force
+    pub fn apply_force(&mut self, force: Vec2, params: &SimParams) {
+        self.acceleration += force.clamp_length_max(params.max_force);
+    }
+
+    /// Apply the acceleration and velocity to the position
+    pub fn integrate(&mut self, dt: f32, params: &SimParams) {
+        let dv = self.acceleration * dt;
+        self.velocity = (self.velocity + dv).clamp_length_max(params.max_speed);
+        self.position += self.velocity * dt;
+
+        // Check bounds validity & wrap position if needed
+        if params.wraparound && !params.bounds.contains(self.position) {
+            self.position = wrap_position(self.position, &params.bounds);
+        }
+
+        // Reset acceleration
+        self.acceleration = Vec2::ZERO;
+    }
+
+    /// Angle of the velocity vector in radians
+    pub fn heading(&self) -> f32 {
+        self.velocity.y.atan2(self.velocity.x)
+    }
+
+    /// Magnitude of the velocity vector
+    pub fn speed(&self) -> f32 {
+        self.velocity.length()
+    }
+}
+
+/// Helper function to wrap position if exceeding bounds.
+/// Returns the wrapped position
+fn wrap_position(position: Vec2, bounds: &Rect) -> Vec2 {
+    let mut position = position;
+    if position.x < bounds.left() {
+        let diff = position.x - bounds.left();
+        position.x = bounds.right() + diff;
+    } else if position.x > bounds.right() {
+        let diff = position.x - bounds.right();
+        position.x = bounds.left() + diff;
+    }
+    if position.y < bounds.bottom() {
+        let diff = position.y - bounds.bottom();
+        position.y = bounds.top() + diff;
+    } else if position.y > bounds.top() {
+        let diff = position.y - bounds.top();
+        position.y = bounds.bottom() + diff;
+    }
+    position
+}

@@ -1,0 +1,12 @@
+# Configuration file for MarkovMusic project
+# ALL FIELDS ARE REQUIRED
+
+[tempo]
+# initial beats per minute (Float, "120.0")
+bpm = 120.0
+
+[osc_send]
+# OSC receiver's IP address (String, "xxx.xxx.xx.xx")
+target_addr = "127.0.0.1"
+# OSC receiver's port (Int, "8000")
+target_port = 8000

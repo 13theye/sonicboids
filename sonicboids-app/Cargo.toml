@@ -1,0 +1,23 @@
+[package]
+name = "sonicboids-app"
+version = "0.1.0"
+edition = "2024"
+authors = ["13th Eye <jjhh@13theye.com>"]
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "sonicboids"
+path = "src/main.rs"
+
+[dependencies]
+sonicboids-core = { path = "../sonicboids-core" }
+sonicboids-render = { path = "../sonicboids-render"}
+config = "0.15"
+nannou = "0.19"
+nannou_osc = "0.19"
+nannou_egui = "0.19"
+prat = { path = "../../13thlib/prat"}
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["sync"] }

@@ -1,0 +1,11 @@
+[package]
+name = "sonicboids-core"
+version = "0.1.0"
+edition = "2024"
+authors = ["13th Eye <jjhh@13theye.com>"]
+
+[dependencies]
+nannou = "0.19"
+rand = "0.9"
+rand_distr = "0.5"
+serde = { version = "1.0", features = ["derive"] }

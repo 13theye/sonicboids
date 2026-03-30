@@ -1,0 +1,5 @@
+[workspace]
+members = ["sonicboids-core", "sonicboids-app", "sonicboids-render"]
+resolver = "2"
+authors = ["13th Eye <jjhh@13theye.com>"]
+
