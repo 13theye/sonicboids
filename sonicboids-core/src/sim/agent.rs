@@ -1,6 +1,6 @@
 //! The Simulation agent for 2D space
 
-use super::SimParams;
+use super::{BoundsBehavior, SimParams};
 
 use nannou::prelude::*;
 
@@ -26,9 +26,17 @@ impl Agent {
         self.velocity = (self.velocity + dv).clamp_length_max(params.max_speed);
         self.position += self.velocity * dt;
 
-        // Check bounds validity & wrap position if needed
-        if params.wraparound && !params.bounds.contains(self.position) {
-            self.position = wrap_position(self.position, &params.bounds);
+        // Check bounds behavior & apply special behavior if applicable
+        if !params.bounds.contains(self.position) {
+            match params.bounds_behavior {
+                BoundsBehavior::Bounce => {
+                    self.velocity = bounce(self.position, self.velocity, &params.bounds);
+                }
+                BoundsBehavior::Wrap => {
+                    self.position = wrap_position(self.position, &params.bounds);
+                }
+                BoundsBehavior::Through => {}
+            }
         }
 
         // Reset acceleration
@@ -65,4 +73,18 @@ fn wrap_position(position: Vec2, bounds: &Rect) -> Vec2 {
         position.y = bounds.bottom() + diff;
     }
     position
+}
+
+/// Helper function to bounce off the bounds
+fn bounce(position: Vec2, incoming_velocity: Vec2, bounds: &Rect) -> Vec2 {
+    let mut velocity = incoming_velocity;
+    if position.x < bounds.left() || position.x > bounds.right() {
+        velocity.x *= -1.0;
+    }
+
+    if position.y < bounds.bottom() || position.y > bounds.top() {
+        velocity.y *= -1.0;
+    }
+
+    velocity
 }

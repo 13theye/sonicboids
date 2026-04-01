@@ -12,27 +12,33 @@ pub struct SimParams {
     pub separation_weight: f32,
     pub alignment_weight: f32,
     pub cohesion_weight: f32,
-    pub wraparound: bool,
+    pub bounds_behavior: BoundsBehavior,
 }
 
 impl Default for SimParams {
     fn default() -> Self {
         let rect_center = Vec2::ZERO;
-        let rect_size = Vec2::new(3840.0, 2160.0);
+        let rect_size = Vec2::new(1920.0, 1080.0);
 
         let bounds = Rect::from_xy_wh(rect_center, rect_size);
 
         Self {
             agent_count: 5000,
             bounds,
-            perception_radius: 20.0,
-            separation_radius: 10.0,
-            max_speed: 15.0,
-            max_force: 3.0,
+            perception_radius: 30.0,
+            separation_radius: 20.0,
+            max_speed: 600.0,
+            max_force: 600.0,
             separation_weight: 1.0,
-            alignment_weight: 1.0,
-            cohesion_weight: 1.0,
-            wraparound: true,
+            alignment_weight: 0.3,
+            cohesion_weight: 0.8,
+            bounds_behavior: BoundsBehavior::Bounce,
         }
     }
+}
+
+pub enum BoundsBehavior {
+    Bounce,
+    Wrap,
+    Through,
 }

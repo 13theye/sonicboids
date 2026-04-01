@@ -5,8 +5,11 @@ use crate::sim::{Agent, SimParams};
 use nannou::prelude::*;
 
 pub mod alignment;
+pub use alignment::Alignment;
 pub mod cohesion;
+pub use cohesion::Cohesion;
 pub mod separation;
+pub use separation::Separation;
 
 /// A SteeringRule defines a behavior for an `Agent`
 pub trait SteeringRule {

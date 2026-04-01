@@ -17,6 +17,9 @@ impl Flock {
         let mut agents = Vec::with_capacity(n);
         let mut id = 0;
 
+        // Initial velocity
+        let vi = 50.0;
+
         while agents.len() < n {
             let x = rng.random_range(bounds.left()..=bounds.right());
             let y = rng.random_range(bounds.bottom()..=bounds.top());
@@ -26,7 +29,7 @@ impl Flock {
 
             if rng.random::<f64>() < noise_val {
                 let angle = rng.random_range(0.0..TAU);
-                let velocity = Vec2::new(angle.cos(), angle.sin());
+                let velocity = Vec2::new(angle.cos() * vi, angle.sin() * vi);
                 agents.push(Agent {
                     id,
                     position: Vec2::new(x, y),

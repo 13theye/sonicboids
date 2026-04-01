@@ -5,4 +5,8 @@ use prat::ClockService;
 use prat::clockservice::BeatEvent;
 use tokio::sync::broadcast;
 
-pub struct Model {}
+use sonicboids_core::sim::{SimParams, Simulation};
+
+pub struct Model {
+    pub sim: Simulation,
+}

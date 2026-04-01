@@ -6,11 +6,15 @@ mod params;
 
 pub use agent::{Agent, AgentId};
 pub use flock::Flock;
-pub use params::SimParams;
+pub use params::{BoundsBehavior, SimParams};
 
-use crate::{spatial::SpatialIndex, steering::SteeringRule};
+use crate::{
+    spatial::{BruteForceIndex, SpatialIndex},
+    steering::{Alignment, Cohesion, Separation, SteeringRule},
+};
 
 use nannou::prelude::*;
+use std::time::Duration;
 
 pub struct Simulation {
     pub flock: Flock,
@@ -20,7 +24,19 @@ pub struct Simulation {
 }
 
 impl Simulation {
-    pub fn update(&mut self, dt: f32) {
+    pub fn new(params: SimParams) -> Self {
+        let rules = init_rules();
+        let spatial = Box::new(BruteForceIndex {});
+
+        Self {
+            flock: Flock::new(params.agent_count, params.bounds),
+            params,
+            rules,
+            spatial,
+        }
+    }
+
+    pub fn update(&mut self, dt: Duration) {
         self.spatial.rebuild(&self.flock.agents);
 
         // Compute forces for each agent
@@ -48,6 +64,7 @@ impl Simulation {
             .collect();
 
         // Apply forces
+        let dt = dt.as_secs_f32();
         self.flock
             .agents
             .iter_mut()
@@ -57,4 +74,16 @@ impl Simulation {
                 agent.integrate(dt, &self.params);
             });
     }
+
+    pub fn flock(&self) -> &Flock {
+        &self.flock
+    }
+}
+
+fn init_rules() -> Vec<Box<dyn SteeringRule>> {
+    vec![
+        Box::new(Alignment {}),
+        Box::new(Cohesion {}),
+        Box::new(Separation {}),
+    ]
 }

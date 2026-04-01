@@ -1,7 +1,8 @@
 //! Spatial index computation
 
-mod brute_force;
-mod grid;
+pub mod brute_force;
+pub use brute_force::BruteForceIndex;
+pub mod grid;
 
 use crate::sim::{Agent, AgentId};
 
