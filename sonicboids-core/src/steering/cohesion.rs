@@ -21,6 +21,6 @@ impl SteeringRule for Cohesion {
             .fold(Vec2::ZERO, |accum, n| accum + n.position)
             / neighbor_ids.len() as f32;
         let desired = (center - agent.position).normalize_or_zero() * params.max_speed;
-        desired - agent.velocity
+        desired * params.cohesion_weight - agent.velocity
     }
 }

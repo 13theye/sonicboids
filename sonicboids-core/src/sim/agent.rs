@@ -32,7 +32,7 @@ impl Agent {
                 BoundsBehavior::Bounce => {
                     self.velocity = bounce(self.position, self.velocity, &params.bounds);
                 }
-                BoundsBehavior::Wrap => {
+                BoundsBehavior::Wraparound => {
                     self.position = wrap_position(self.position, &params.bounds);
                 }
                 BoundsBehavior::Through => {}

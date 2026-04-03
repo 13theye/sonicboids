@@ -10,3 +10,8 @@ bpm = 120.0
 target_addr = "127.0.0.1"
 # OSC receiver's port (Int, "8000")
 target_port = 8000
+
+[main_window]
+# Main window's width and height in pixels (int)
+width = 1920
+height = 1080

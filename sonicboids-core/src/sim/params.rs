@@ -23,22 +23,22 @@ impl Default for SimParams {
         let bounds = Rect::from_xy_wh(rect_center, rect_size);
 
         Self {
-            agent_count: 5000,
+            agent_count: 10000,
             bounds,
-            perception_radius: 30.0,
+            perception_radius: 50.0,
             separation_radius: 20.0,
-            max_speed: 600.0,
+            max_speed: 1000.0,
             max_force: 600.0,
             separation_weight: 1.0,
-            alignment_weight: 0.3,
-            cohesion_weight: 0.8,
-            bounds_behavior: BoundsBehavior::Bounce,
+            alignment_weight: 0.4,
+            cohesion_weight: 0.7,
+            bounds_behavior: BoundsBehavior::Wraparound,
         }
     }
 }
 
 pub enum BoundsBehavior {
     Bounce,
-    Wrap,
+    Wraparound,
     Through,
 }

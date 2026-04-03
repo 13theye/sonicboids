@@ -1,4 +1,4 @@
-use sonicboids_app::{model::Model, update::update, view::view};
+use sonicboids_app::{model::Model, update::update, view::main_window::main_window};
 use sonicboids_core::sim::{SimParams, Simulation};
 
 use nannou::prelude::*;
@@ -15,7 +15,7 @@ fn init_model(app: &App) -> Model {
         .title("Sonic Boids")
         .size(1920, 1080)
         .msaa_samples(1)
-        .view(view)
+        .view(main_window)
         .build()
     else {
         panic!("Failed to create WindowId");

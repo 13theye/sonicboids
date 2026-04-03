@@ -14,6 +14,7 @@ use crate::{
 };
 
 use nannou::prelude::*;
+use rayon::prelude::*;
 use std::time::Duration;
 
 pub struct Simulation {
@@ -40,8 +41,14 @@ impl Simulation {
         self.spatial.rebuild(&self.flock.agents);
 
         // Compute forces for each agent
-        let forces: Vec<Vec2> = self
-            .flock
+        let forces = self.par_generate_forces();
+
+        // Apply forces
+        self.par_apply_forces(forces, dt);
+    }
+
+    fn generate_forces(&self) -> Vec<Vec2> {
+        self.flock
             .agents
             .iter()
             .map(|agent| {
@@ -61,13 +68,51 @@ impl Simulation {
                     .map(|rule| rule.apply(agent, &neighbors, &self.params))
                     .fold(Vec2::ZERO, |acc, f| acc + f)
             })
-            .collect();
+            .collect()
+    }
 
-        // Apply forces
+    /// Applies a Vec of forces to each agent with the corresponding index
+    fn apply_forces(&mut self, forces: Vec<Vec2>, dt: Duration) {
         let dt = dt.as_secs_f32();
         self.flock
             .agents
             .iter_mut()
+            .zip(forces)
+            .for_each(|(agent, force)| {
+                agent.apply_force(force, &self.params);
+                agent.integrate(dt, &self.params);
+            });
+    }
+
+    fn par_generate_forces(&self) -> Vec<Vec2> {
+        self.flock
+            .agents
+            .par_iter()
+            .map(|agent| {
+                let neighbor_ids = self.spatial.neighbors_of(
+                    agent,
+                    self.params.perception_radius,
+                    &self.flock.agents,
+                );
+
+                let neighbors: Vec<&Agent> = neighbor_ids
+                    .iter()
+                    .filter_map(|id| self.flock.agents.get(*id))
+                    .collect();
+
+                self.rules
+                    .iter()
+                    .map(|rule| rule.apply(agent, &neighbors, &self.params))
+                    .fold(Vec2::ZERO, |acc, f| acc + f)
+            })
+            .collect()
+    }
+
+    fn par_apply_forces(&mut self, forces: Vec<Vec2>, dt: Duration) {
+        let dt = dt.as_secs_f32();
+        self.flock
+            .agents
+            .par_iter_mut()
             .zip(forces)
             .for_each(|(agent, force)| {
                 agent.apply_force(force, &self.params);

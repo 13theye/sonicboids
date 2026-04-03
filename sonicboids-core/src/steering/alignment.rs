@@ -22,6 +22,6 @@ impl SteeringRule for Alignment {
         }) / neighbor_ids.len() as f32;
 
         let desired = avg_velocity.normalize_or_zero() * params.max_speed;
-        desired - agent.velocity
+        desired * params.alignment_weight - agent.velocity
     }
 }

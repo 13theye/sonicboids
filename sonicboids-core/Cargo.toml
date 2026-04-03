@@ -8,4 +8,5 @@ authors = ["13th Eye <jjhh@13theye.com>"]
 nannou = "0.19"
 rand = "0.9"
 rand_distr = "0.5"
+rayon = "1.11"
 serde = { version = "1.0", features = ["derive"] }

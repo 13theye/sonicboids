@@ -18,11 +18,14 @@ impl SteeringRule for Separation {
 
         let repulsion = neighbors.iter().fold(Vec2::ZERO, |accum, n| {
             let dp = agent.position - n.position;
-            let distance = dp.length().max(f32::EPSILON); // avoid div by zero
-            accum + dp / distance
+            let dist_sq = dp.length_squared().max(f32::EPSILON);
+            if dist_sq > params.separation_radius.pow(2) {
+                return accum;
+            }
+            accum + dp / dist_sq // inverse-square: much stronger at close range
         });
 
         let desired = repulsion.normalize_or_zero() * params.max_speed;
-        desired - agent.velocity
+        desired * params.separation_weight - agent.velocity
     }
 }

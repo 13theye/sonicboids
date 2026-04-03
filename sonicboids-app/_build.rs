@@ -20,7 +20,7 @@ fn main() {
         .unwrap();
 
     let mut desired_path_string = top_path.to_str().unwrap().to_owned();
-    desired_path_string.push_str("/markov-support");
+    desired_path_string.push_str("/sonicboids-support");
 
     let mut new_assets_path_string = desired_path_string.clone();
     new_assets_path_string.push_str("/assets");
