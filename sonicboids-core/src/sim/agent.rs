@@ -1,18 +1,19 @@
 //! The Simulation agent for 2D space
 
-use super::{BoundsBehavior, SimParams};
+use super::{BoundsBehavior, History, SimParams};
 
 use nannou::prelude::*;
 
 /// Identifier for the `Agent`
 pub type AgentId = usize;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Agent {
     pub id: AgentId,
     pub position: Vec2,
     pub velocity: Vec2,
     pub acceleration: Vec2,
+    pub history: History,
 }
 
 impl Agent {

@@ -13,6 +13,7 @@ pub struct SimParams {
     pub alignment_weight: f32,
     pub cohesion_weight: f32,
     pub bounds_behavior: BoundsBehavior,
+    pub history_length: usize,
 }
 
 impl Default for SimParams {
@@ -33,6 +34,7 @@ impl Default for SimParams {
             alignment_weight: 0.4,
             cohesion_weight: 0.7,
             bounds_behavior: BoundsBehavior::Wraparound,
+            history_length: 5,
         }
     }
 }

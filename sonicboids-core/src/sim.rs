@@ -2,10 +2,12 @@
 
 mod agent;
 mod flock;
+mod history;
 mod params;
 
 pub use agent::{Agent, AgentId};
 pub use flock::Flock;
+pub use history::History;
 pub use params::{BoundsBehavior, SimParams};
 
 // Allow unsed Spatial modules
@@ -32,7 +34,7 @@ impl Simulation {
         let spatial = Box::new(GridIndex::new(params.perception_radius / 4.0));
 
         Self {
-            flock: Flock::new(params.agent_count, params.bounds),
+            flock: Flock::new(params.agent_count, params.history_length, params.bounds),
             params,
             rules,
             spatial,
@@ -47,6 +49,9 @@ impl Simulation {
 
         // Apply forces
         self.par_apply_forces(forces, dt);
+
+        // Update histories
+        self.flock.update_histories();
     }
 
     fn generate_forces(&self) -> Vec<Vec2> {
