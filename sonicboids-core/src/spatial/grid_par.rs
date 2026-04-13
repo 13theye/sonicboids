@@ -10,27 +10,25 @@ use std::collections::HashMap;
 pub struct GridIndexPar {
     cell_size: f32,
     cells: HashMap<(i32, i32), Vec<AgentId>>,
-    agent_positions: Vec<(AgentId, Vec2)>,
 }
 
 impl SpatialIndex for GridIndexPar {
     fn rebuild(&mut self, agents: &[Agent]) {
         self.cells.clear();
-        self.agent_positions.clear();
 
         // Compute (cell_key, agent_id, position) for every agent
-        let assignments: Vec<((i32, i32), AgentId, Vec2)> = agents
+
+        let assignments: Vec<((i32, i32), AgentId)> = agents
             .par_iter()
             .map(|a| {
                 let idx = self.get_idx(a.position);
-                (idx, a.id, a.position)
+                (idx, a.id)
             })
             .collect();
 
         // Insert into cell map
-        assignments.iter().for_each(|(cell_idx, agent_id, pos)| {
+        assignments.iter().for_each(|(cell_idx, agent_id)| {
             self.cells.entry(*cell_idx).or_default().push(*agent_id);
-            self.agent_positions.push((*agent_id, *pos));
         });
 
         // Alternative using Rayon's fold/reduce
@@ -38,23 +36,20 @@ impl SpatialIndex for GridIndexPar {
         self.cells = agents
             .par_iter()
             .fold(
-                || HashMap::new(),
-                    |mut map, a| {
-                        let idx = self.get_idx(a.position);
-                        map.entry(idx).or_default().push(a.id);
-                        map
-                    },
-         )
-         .reduce(
-             || HashMap::new(),
-                |mut a, b| {
-                    for (key, ids) in b {
-                        a.entry(key).or_default().extend(ids);
-                    }
-                    a
+                HashMap::new,
+                |mut map: HashMap<(i32, i32), Vec<usize>>, a| {
+                    let idx = self.get_idx(a.position);
+                    map.entry(idx).or_default().push(a.id);
+                    map
                 },
-            );
-        */
+            )
+            .reduce(HashMap::new, |mut a, b| {
+                for (key, ids) in b {
+                    a.entry(key).or_default().extend(ids);
+                }
+                a
+            });
+             */
     }
 
     /// Same as GridIndex: parallelism won't give gains here
@@ -83,7 +78,6 @@ impl GridIndexPar {
         Self {
             cell_size,
             cells: HashMap::new(),
-            agent_positions: vec![],
         }
     }
 

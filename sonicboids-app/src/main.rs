@@ -1,6 +1,7 @@
 use sonicboids_app::{model::Model, update::update, view::main_window::main_window};
 use sonicboids_core::sim::{SimParams, Simulation};
 
+use fps::FpsManager;
 use nannou::prelude::*;
 
 fn main() {
@@ -8,12 +9,14 @@ fn main() {
 }
 
 fn init_model(app: &App) -> Model {
+    let window_w = 1920.0;
+    let window_h = 1080.0;
     let params = SimParams::default();
 
     let Ok(window_id) = app
         .new_window()
         .title("Sonic Boids")
-        .size(1920, 1080)
+        .size(window_w as u32, window_h as u32)
         .msaa_samples(1)
         .view(main_window)
         .build()
@@ -26,6 +29,7 @@ fn init_model(app: &App) -> Model {
     };
 
     let sim = Simulation::new(params);
+    let fps = FpsManager::new_with(true, true);
 
-    Model { sim }
+    Model { sim, fps }
 }

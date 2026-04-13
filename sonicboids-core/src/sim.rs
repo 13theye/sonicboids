@@ -8,8 +8,10 @@ pub use agent::{Agent, AgentId};
 pub use flock::Flock;
 pub use params::{BoundsBehavior, SimParams};
 
+// Allow unsed Spatial modules
+#[allow(unused_imports)]
 use crate::{
-    spatial::{BruteForceIndex, SpatialIndex},
+    spatial::{BruteForceIndex, GridIndex, GridIndexPar, SpatialIndex},
     steering::{Alignment, Cohesion, Separation, SteeringRule},
 };
 
@@ -27,7 +29,7 @@ pub struct Simulation {
 impl Simulation {
     pub fn new(params: SimParams) -> Self {
         let rules = init_rules();
-        let spatial = Box::new(BruteForceIndex::new());
+        let spatial = Box::new(GridIndex::new(params.perception_radius / 4.0));
 
         Self {
             flock: Flock::new(params.agent_count, params.bounds),

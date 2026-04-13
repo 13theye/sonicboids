@@ -25,7 +25,7 @@ impl Default for SimParams {
         Self {
             agent_count: 10000,
             bounds,
-            perception_radius: 50.0,
+            perception_radius: 100.0,
             separation_radius: 20.0,
             max_speed: 1000.0,
             max_force: 600.0,

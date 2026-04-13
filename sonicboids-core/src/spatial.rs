@@ -3,7 +3,9 @@
 pub mod brute_force;
 pub use brute_force::BruteForceIndex;
 pub mod grid;
+pub use grid::GridIndex;
 pub mod grid_par;
+pub use grid_par::GridIndexPar;
 
 use crate::sim::{Agent, AgentId};
 
