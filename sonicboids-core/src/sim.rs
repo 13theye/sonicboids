@@ -27,7 +27,7 @@ pub struct Simulation {
 impl Simulation {
     pub fn new(params: SimParams) -> Self {
         let rules = init_rules();
-        let spatial = Box::new(BruteForceIndex {});
+        let spatial = Box::new(BruteForceIndex::new());
 
         Self {
             flock: Flock::new(params.agent_count, params.bounds),
@@ -52,11 +52,9 @@ impl Simulation {
             .agents
             .iter()
             .map(|agent| {
-                let neighbor_ids = self.spatial.neighbors_of(
-                    agent,
-                    self.params.perception_radius,
-                    &self.flock.agents,
-                );
+                let neighbor_ids = self
+                    .spatial
+                    .neighbors_of(agent, self.params.perception_radius);
 
                 let neighbors: Vec<&Agent> = neighbor_ids
                     .iter()
@@ -89,11 +87,9 @@ impl Simulation {
             .agents
             .par_iter()
             .map(|agent| {
-                let neighbor_ids = self.spatial.neighbors_of(
-                    agent,
-                    self.params.perception_radius,
-                    &self.flock.agents,
-                );
+                let neighbor_ids = self
+                    .spatial
+                    .neighbors_of(agent, self.params.perception_radius);
 
                 let neighbors: Vec<&Agent> = neighbor_ids
                     .iter()

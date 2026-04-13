@@ -7,6 +7,7 @@ use nannou::prelude::*;
 /// Identifier for the `Agent`
 pub type AgentId = usize;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Agent {
     pub id: AgentId,
     pub position: Vec2,
