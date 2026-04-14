@@ -85,6 +85,7 @@ fn simple_arrow_tris(position: Vec2, heading: Vec2, color: Rgba) -> [Tri<(Vec3, 
 /// Tessellate an arrow shape into 4 triangles (fan from tip).
 /// The 6-vertex polygon [tip, wing_l, tail_l, pos, tail_r, wing_r] maps to
 /// 4 triangles with tip as the shared vertex.
+#[allow(dead_code)]
 fn arrow_tris(position: Vec2, heading: Vec2, color: Rgba) -> [Tri<(Vec3, Rgba)>; 4] {
     let perp = Vec2::new(-heading.y, heading.x);
     let tip = (position + heading * 8.0).extend(0.0);

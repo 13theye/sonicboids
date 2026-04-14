@@ -37,11 +37,11 @@ impl Default for SimParams {
             max_speed: 1000.0,
             max_force: 600.0,
             separation_weight: 1.0,
-            alignment_weight: 0.4,
+            alignment_weight: 0.5,
             cohesion_weight: 0.7,
             bounds_behavior: BoundsBehavior::Bounce,
             //history_length: 8,
-            trail_tint: Rgba::new(0.0, 0.0, 0.0, 0.2),
+            trail_tint: Rgba::new(0.0, 0.0, 0.0, 0.02),
         }
     }
 }

@@ -31,7 +31,7 @@ pub struct Simulation {
 impl Simulation {
     pub fn new(params: SimParams) -> Self {
         let rules = init_rules();
-        let spatial = Box::new(GridIndex::new(params.perception_radius / 4.0));
+        let spatial = Box::new(GridIndexPar::new(params.perception_radius / 4.0));
 
         Self {
             flock: Flock::new(params.agent_count, params.bounds),
@@ -55,6 +55,7 @@ impl Simulation {
         //self.flock.update_histories();
     }
 
+    #[allow(dead_code)]
     fn generate_forces(&self) -> Vec<Vec2> {
         self.flock
             .agents
@@ -78,6 +79,7 @@ impl Simulation {
     }
 
     /// Applies a Vec of forces to each agent with the corresponding index
+    #[allow(dead_code)]
     fn apply_forces(&mut self, forces: Vec<Vec2>, dt: Duration) {
         let dt = dt.as_secs_f32();
         self.flock
