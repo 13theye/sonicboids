@@ -33,8 +33,8 @@ impl Default for SimParams {
             separation_weight: 1.0,
             alignment_weight: 0.4,
             cohesion_weight: 0.7,
-            bounds_behavior: BoundsBehavior::Wraparound,
-            history_length: 5,
+            bounds_behavior: BoundsBehavior::Bounce,
+            history_length: 8,
         }
     }
 }

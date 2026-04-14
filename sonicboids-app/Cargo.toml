@@ -17,6 +17,7 @@ sonicboids-render = { path = "../sonicboids-render"}
 config = "0.15"
 fps = { path = "../../13thlib/fps" }
 nannou = "0.19"
+rayon = "1.11"
 nannou_osc = "0.19"
 nannou_egui = "0.19"
 prat = { path = "../../13thlib/prat"}
