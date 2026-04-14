@@ -1,7 +1,6 @@
 //! Appstate update
 
 use crate::model::Model;
-use sonicboids_core::sim::Simulation;
 
 use nannou::prelude::*;
 

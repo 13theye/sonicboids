@@ -1,6 +1,6 @@
 //! The Simulation agent for 2D space
 
-use super::{BoundsBehavior, History, SimParams};
+use super::{BoundsBehavior, SimParams};
 
 use nannou::prelude::*;
 
@@ -13,13 +13,17 @@ pub struct Agent {
     pub position: Vec2,
     pub velocity: Vec2,
     pub acceleration: Vec2,
-    pub history: History,
+    /// Magnitude of the net acceleration applied last frame (before reset).
+    pub last_force: f32,
+    //pub history: History,
 }
 
 impl Agent {
-    /// Applies a force to the `Agent`, consuming the force
+    /// Applies a force to the `Agent`, consuming the force.
+    /// Acceleration is scaled by 1/mass (F = ma → a = F/m), so heavier
+    /// agents are slower to change direction.
     pub fn apply_force(&mut self, force: Vec2, params: &SimParams) {
-        self.acceleration += force.clamp_length_max(params.max_force);
+        self.acceleration += force.clamp_length_max(params.max_force) / params.agent_mass;
     }
 
     /// Apply the acceleration and velocity to the position
@@ -40,6 +44,9 @@ impl Agent {
                 BoundsBehavior::Through => {}
             }
         }
+
+        // Capture force magnitude before reset
+        self.last_force = self.acceleration.length();
 
         // Reset acceleration
         self.acceleration = Vec2::ZERO;

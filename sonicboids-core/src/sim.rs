@@ -34,7 +34,7 @@ impl Simulation {
         let spatial = Box::new(GridIndex::new(params.perception_radius / 4.0));
 
         Self {
-            flock: Flock::new(params.agent_count, params.history_length, params.bounds),
+            flock: Flock::new(params.agent_count, params.bounds),
             params,
             rules,
             spatial,
@@ -51,7 +51,8 @@ impl Simulation {
         self.par_apply_forces(forces, dt);
 
         // Update histories
-        self.flock.update_histories();
+        // This is disabled while history is created on the render side
+        //self.flock.update_histories();
     }
 
     fn generate_forces(&self) -> Vec<Vec2> {

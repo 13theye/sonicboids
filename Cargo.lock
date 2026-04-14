@@ -2644,9 +2644,8 @@ dependencies = [
 name = "sonicboids-render"
 version = "0.1.0"
 dependencies = [
- "rand 0.9.2",
- "rand_distr",
- "serde",
+ "nannou",
+ "sonicboids-core",
 ]
 
 [[package]]

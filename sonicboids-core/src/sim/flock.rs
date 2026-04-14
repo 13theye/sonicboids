@@ -4,15 +4,14 @@ use nannou::noise::{NoiseFn, Perlin};
 use nannou::prelude::*;
 use rand::Rng;
 
-use super::{Agent, History};
-
+use super::Agent;
 
 pub struct Flock {
     pub agents: Vec<Agent>,
 }
 
 impl Flock {
-    pub fn new(n: usize, history_length: usize, bounds: Rect) -> Self {
+    pub fn new(n: usize, bounds: Rect) -> Self {
         let perlin = Perlin::default();
         let mut rng = rand::rng();
         let mut agents = Vec::with_capacity(n);
@@ -36,7 +35,7 @@ impl Flock {
                     position: Vec2::new(x, y),
                     velocity,
                     acceleration: Vec2::ZERO,
-                    history: History::new(history_length),
+                    last_force: 0.0,
                 });
                 id += 1;
             }
@@ -45,9 +44,11 @@ impl Flock {
         Self { agents }
     }
 
+    /*
     pub fn update_histories(&mut self) {
         self.agents.iter_mut().for_each(|agent| {
             agent.history.push(agent.position, agent.velocity);
         });
     }
+     */
 }

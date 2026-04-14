@@ -1,5 +1,8 @@
+use std::cell::RefCell;
+
 use sonicboids_app::{model::Model, update::update, view::main_window::main_window};
 use sonicboids_core::sim::{SimParams, Simulation};
+use sonicboids_render::renderer::FeedbackRenderer;
 
 use fps::FpsManager;
 use nannou::prelude::*;
@@ -28,8 +31,15 @@ fn init_model(app: &App) -> Model {
         panic!("Failed to create Window");
     };
 
+    let window = app.main_window();
+    let device = window.device();
+    let feedback = RefCell::new(FeedbackRenderer::new(
+        device,
+        [window_w as u32, window_h as u32],
+    ));
+
     let sim = Simulation::new(params);
     let fps = FpsManager::new_with(true, true);
 
-    Model { sim, fps }
+    Model { sim, fps, feedback }
 }
