@@ -1,29 +1,34 @@
 //! Drawing functions for the Simulation
 
-use sonicboids_core::sim::Flock;
+use sonicboids_core::sim::{Agent, Physics, SimParams};
 
 use nannou::geom::Tri;
 use nannou::prelude::*;
 use rayon::prelude::*;
 
-/// Draw all `Agents` in the `Flock`.
+/// Draw all `Agents`
 ///
 /// Each agent's color is derived from its heading (hue) and speed + force (lightness).
-pub fn draw_flock(draw: &Draw, flock: &Flock, max_speed: f32, max_accel: f32) {
-    let tris: Vec<Tri<(Vec3, Rgba)>> = flock
-        .agents
+pub fn draw_agents(draw: &Draw, agents: &[Agent], physics: &Physics, params: &SimParams) {
+    let tris: Vec<Tri<(Vec3, Rgba)>> = agents
         .par_iter()
-        .flat_map_iter(|agent| {
+        .enumerate()
+        .flat_map_iter(|(idx, agent)| {
             let heading = if agent.velocity.length_squared() > 0.0 {
                 agent.velocity.normalize()
             } else {
                 Vec2::Y
             };
+
+            let accel = physics.accelerations.get(idx).unwrap_or(&Vec2::ZERO);
+            let max_speed = params.max_speed;
+            let max_accel = params.max_force * params.agent_mass;
+
             let color = heading_speed_color(
                 agent.heading(),
                 agent.speed(),
                 max_speed,
-                agent.last_force,
+                accel.length(),
                 max_accel,
             );
             simple_arrow_tris(agent.position, heading, color)
@@ -42,13 +47,13 @@ fn heading_speed_color(
     heading: f32,
     speed: f32,
     max_speed: f32,
-    last_force: f32,
+    last_accel: f32,
     max_accel: f32,
 ) -> Rgba {
     let hue = (heading + std::f32::consts::PI) / std::f32::consts::TAU;
     let speed_t = (speed / max_speed).clamp(0.0, 1.0);
-    let force_t = (last_force / max_accel).clamp(0.0, 1.0);
-    let lightness = (0.15 + speed_t * 0.95 + force_t * 0.05).clamp(0.0, 1.0);
+    let accel_t = (last_accel / max_accel).clamp(0.0, 1.0);
+    let lightness = (0.15 + speed_t * 0.8 + accel_t * 0.2).clamp(0.0, 1.0);
     hsl_to_rgba(hue, 1.0, lightness)
 }
 

@@ -20,18 +20,17 @@ pub fn execute_renderer_pipeline(app: &App, model: &Model, frame: Frame) {
 
     // 2. Draw a tinted overlay to fade/color-shift the history each frame.
     //    trail_tint alpha controls decay speed; rgb controls color shift direction.
-    let t = model.sim.params.trail_tint;
+    let t = model.sim.params().trail_tint;
     draw.rect()
         .wh(rect.wh())
         .rgba(t.red, t.green, t.blue, t.alpha);
 
     // 3. Draw current agents only (no history iteration)
-    let max_accel = model.sim.params.max_force / model.sim.params.agent_mass;
-    sim::draw_flock(
+    sim::draw_agents(
         &draw,
-        &model.sim.flock,
-        model.sim.params.max_speed,
-        max_accel,
+        model.sim.agents(),
+        model.sim.physics(),
+        model.sim.params(),
     );
 
     // 4. Render the draw context into the write texture, flip read <-> write
@@ -64,11 +63,11 @@ pub fn execute_simple_pipeline(app: &App, model: &Model, frame: Frame) {
 
     draw.background().color(BLACK);
 
-    sim::draw_flock(
+    sim::draw_agents(
         &draw,
-        &model.sim.flock,
-        model.sim.params.max_speed,
-        model.sim.params.max_force,
+        model.sim.agents(),
+        model.sim.physics(),
+        model.sim.params(),
     );
 
     // Draw FPS

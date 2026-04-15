@@ -13,8 +13,6 @@ pub struct Agent {
     pub position: Vec2,
     pub velocity: Vec2,
     pub acceleration: Vec2,
-    /// Magnitude of the net acceleration applied last frame (before reset).
-    pub last_force: f32,
     //pub history: History,
 }
 
@@ -44,9 +42,6 @@ impl Agent {
                 BoundsBehavior::Through => {}
             }
         }
-
-        // Capture force magnitude before reset
-        self.last_force = self.acceleration.length();
 
         // Reset acceleration
         self.acceleration = Vec2::ZERO;

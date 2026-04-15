@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 
 use sonicboids_app::{model::Model, update::update, view::main_window::main_window};
-use sonicboids_core::sim::{SimParams, Simulation};
+use sonicboids_core::sim::{SimParams, Simulation, init_rules, init_spatial};
 use sonicboids_render::renderer::FeedbackRenderer;
 
 use fps::FpsManager;
@@ -38,7 +38,9 @@ fn init_model(app: &App) -> Model {
         [window_w as u32, window_h as u32],
     ));
 
-    let sim = Simulation::new(params);
+    let rules = init_rules();
+    let spatial = init_spatial(&params);
+    let sim = Simulation::new(params, rules, spatial);
     let fps = FpsManager::new_with(true, true);
 
     Model { sim, fps, feedback }

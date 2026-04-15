@@ -35,7 +35,6 @@ impl Flock {
                     position: Vec2::new(x, y),
                     velocity,
                     acceleration: Vec2::ZERO,
-                    last_force: 0.0,
                 });
                 id += 1;
             }

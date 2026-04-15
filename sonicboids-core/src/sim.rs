@@ -21,20 +21,50 @@ use nannou::prelude::*;
 use rayon::prelude::*;
 use std::time::Duration;
 
+/// Helper function to initialize rules for testing
+pub fn init_rules() -> Vec<Box<dyn SteeringRule>> {
+    vec![
+        Box::new(Alignment {}),
+        Box::new(Cohesion {}),
+        Box::new(Separation {}),
+    ]
+}
+
+pub fn init_spatial(params: &SimParams) -> Box<dyn SpatialIndex> {
+    Box::new(GridIndex::new(
+        params.perception_radius / 4.0,
+        params.bounds,
+    ))
+}
+
 pub struct Simulation {
-    pub flock: Flock,
-    pub params: SimParams,
-    pub rules: Vec<Box<dyn SteeringRule>>,
-    pub spatial: Box<dyn SpatialIndex>,
+    // A wrapper for Vec<Agents>
+    flock: Flock,
+
+    // The state of the physics simulation
+    physics: Physics,
+
+    // Simulation parameters
+    params: SimParams,
+
+    // Rules governing agent behavior
+    rules: Vec<Box<dyn SteeringRule>>,
+
+    // The graph of agent positions
+    spatial: Box<dyn SpatialIndex>,
 }
 
 impl Simulation {
-    pub fn new(params: SimParams) -> Self {
-        let rules = init_rules();
-        let spatial = Box::new(GridIndexPar::new(params.perception_radius / 4.0));
+    pub fn new(
+        params: SimParams,
+        rules: Vec<Box<dyn SteeringRule>>,
+        spatial: Box<dyn SpatialIndex>,
+    ) -> Self {
+        let physics = Physics::new(params.agent_count);
 
         Self {
             flock: Flock::new(params.agent_count, params.bounds),
+            physics,
             params,
             rules,
             spatial,
@@ -45,10 +75,10 @@ impl Simulation {
         self.spatial.rebuild(&self.flock.agents);
 
         // Compute forces for each agent
-        let forces = self.par_generate_forces();
+        self.physics.forces = self.par_generate_forces();
 
         // Apply forces
-        self.par_apply_forces(forces, dt);
+        self.par_apply_forces(dt);
 
         // Update histories
         // This is disabled while history is created on the render side
@@ -78,17 +108,24 @@ impl Simulation {
             .collect()
     }
 
-    /// Applies a Vec of forces to each agent with the corresponding index
+    /// Applies a Vec of forces to each agent with the corresponding index, saving computed parameters to `Physics`
     #[allow(dead_code)]
-    fn apply_forces(&mut self, forces: Vec<Vec2>, dt: Duration) {
+    fn apply_forces(&mut self, dt: Duration) {
         let dt = dt.as_secs_f32();
-        self.flock
-            .agents
+        let params = &self.params;
+        let forces = &self.physics.forces;
+
+        self.physics
+            .accelerations
             .iter_mut()
-            .zip(forces)
-            .for_each(|(agent, force)| {
-                agent.apply_force(force, &self.params);
-                agent.integrate(dt, &self.params);
+            .zip(self.physics.delta_v.iter_mut())
+            .zip(forces.iter())
+            .zip(self.flock.agents.iter_mut())
+            .for_each(|(((accel, dv), &force), agent)| {
+                *accel = force.clamp_length_max(params.max_force) / params.agent_mass;
+                *dv = *accel * dt;
+                agent.apply_force(force, params);
+                agent.integrate(dt, params);
             });
     }
 
@@ -114,27 +151,55 @@ impl Simulation {
             .collect()
     }
 
-    fn par_apply_forces(&mut self, forces: Vec<Vec2>, dt: Duration) {
+    /// Apply forces to each agent with the corresponding index, saving computed parameters to `Physics`
+    fn par_apply_forces(&mut self, dt: Duration) {
         let dt = dt.as_secs_f32();
-        self.flock
-            .agents
+        let params = &self.params;
+        let forces = &self.physics.forces;
+
+        self.physics
+            .accelerations
             .par_iter_mut()
-            .zip(forces)
-            .for_each(|(agent, force)| {
-                agent.apply_force(force, &self.params);
-                agent.integrate(dt, &self.params);
+            .zip(self.physics.delta_v.par_iter_mut())
+            .zip(forces.par_iter())
+            .zip(self.flock.agents.par_iter_mut())
+            .for_each(|(((accel, dv), &force), agent)| {
+                *accel = force.clamp_length_max(params.max_force) / params.agent_mass;
+                *dv = *accel * dt;
+                agent.apply_force(force, params);
+                agent.integrate(dt, params);
             });
     }
 
-    pub fn flock(&self) -> &Flock {
-        &self.flock
+    /************* Getters ***************** */
+
+    pub fn agents(&self) -> &[Agent] {
+        &self.flock.agents
+    }
+
+    pub fn physics(&self) -> &Physics {
+        &self.physics
+    }
+
+    pub fn params(&self) -> &SimParams {
+        &self.params
     }
 }
 
-fn init_rules() -> Vec<Box<dyn SteeringRule>> {
-    vec![
-        Box::new(Alignment {}),
-        Box::new(Cohesion {}),
-        Box::new(Separation {}),
-    ]
+/// The state of the physics simulation
+#[derive(Default, Clone)]
+pub struct Physics {
+    pub forces: Vec<Vec2>,
+    pub accelerations: Vec<Vec2>,
+    pub delta_v: Vec<Vec2>,
+}
+
+impl Physics {
+    pub fn new(num_agents: usize) -> Self {
+        Self {
+            forces: vec![Vec2::ZERO; num_agents],
+            accelerations: vec![Vec2::ZERO; num_agents],
+            delta_v: vec![Vec2::ZERO; num_agents],
+        }
+    }
 }
