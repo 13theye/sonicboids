@@ -12,6 +12,7 @@ use crate::sim::{Agent, AgentId};
 pub trait SpatialIndex: Send + Sync {
     /// Rebuild internal model of the spatial index
     fn rebuild(&mut self, agents: &[Agent]);
-    /// Return the neighbors of the agent within a given radius
-    fn neighbors_of(&self, agent: &Agent, radius: f32) -> Vec<AgentId>;
+    /// Populate `out` with the IDs of agents within `radius` of `agent`.
+    /// `out` is cleared before writing.
+    fn neighbors_of(&self, agent: &Agent, radius: f32, out: &mut Vec<AgentId>);
 }

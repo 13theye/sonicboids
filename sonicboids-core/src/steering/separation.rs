@@ -1,7 +1,7 @@
 //! The SteeringRule governing Separation
 
 use super::SteeringRule;
-use crate::sim::{Agent, SimParams};
+use crate::sim::{Agent, AgentId, SimParams};
 
 use nannou::prelude::*;
 
@@ -11,18 +11,26 @@ use nannou::prelude::*;
 pub struct Separation;
 
 impl SteeringRule for Separation {
-    fn apply(&self, agent: &Agent, neighbors: &[&Agent], params: &SimParams) -> Vec2 {
-        if neighbors.is_empty() {
+    fn apply(
+        &self,
+        agent: &Agent,
+        neighbor_ids: &[AgentId],
+        agents: &[Agent],
+        params: &SimParams,
+    ) -> Vec2 {
+        if neighbor_ids.is_empty() {
             return Vec2::ZERO;
         }
 
-        let repulsion = neighbors.iter().fold(Vec2::ZERO, |accum, n| {
-            let dp = agent.position - n.position;
+        let sep_sq = params.separation_radius.powi(2);
+
+        let repulsion = neighbor_ids.iter().fold(Vec2::ZERO, |accumulator, &id| {
+            let dp = agent.position - agents[id].position;
             let dist_sq = dp.length_squared().max(f32::EPSILON);
-            if dist_sq > params.separation_radius.pow(2) {
-                return accum;
+            if dist_sq > sep_sq {
+                return accumulator;
             }
-            accum + dp / dist_sq // inverse-square: much stronger at close range
+            accumulator + dp / dist_sq
         });
 
         let desired = repulsion.normalize_or_zero() * params.max_speed;

@@ -19,7 +19,13 @@ use crate::{
 
 use nannou::prelude::*;
 use rayon::prelude::*;
+use std::cell::RefCell;
 use std::time::Duration;
+
+// Thread-local storage for neighbor IDs -- saves an allocation on the hot loop.
+thread_local! {
+    static NEIGHBOR_IDS: RefCell<Vec<AgentId>> = RefCell::new(Vec::with_capacity(256));
+}
 
 /// Helper function to initialize rules for testing
 pub fn init_rules() -> Vec<Box<dyn SteeringRule>> {
@@ -31,10 +37,7 @@ pub fn init_rules() -> Vec<Box<dyn SteeringRule>> {
 }
 
 pub fn init_spatial(params: &SimParams) -> Box<dyn SpatialIndex> {
-    Box::new(GridIndex::new(
-        params.perception_radius / 4.0,
-        params.bounds,
-    ))
+    Box::new(GridIndexPar::new(params.perception_radius, params.bounds))
 }
 
 pub struct Simulation {
@@ -85,24 +88,60 @@ impl Simulation {
         //self.flock.update_histories();
     }
 
+    fn par_generate_forces(&self) -> Vec<Vec2> {
+        self.flock
+            .agents
+            .par_iter()
+            .map(|agent| {
+                NEIGHBOR_IDS.with(|cell| {
+                    let mut ids = cell.borrow_mut();
+                    self.spatial
+                        .neighbors_of(agent, self.params.perception_radius, &mut ids);
+
+                    self.rules
+                        .iter()
+                        .map(|rule| rule.apply(agent, &ids, &self.flock.agents, &self.params))
+                        .fold(Vec2::ZERO, |acc, f| acc + f)
+                })
+            })
+            .collect()
+    }
+
+    /// Apply forces to each agent with the corresponding index, saving computed parameters to `Physics`
+    fn par_apply_forces(&mut self, dt: Duration) {
+        let dt = dt.as_secs_f32();
+        let params = &self.params;
+        let forces = &self.physics.forces;
+
+        self.physics
+            .accelerations
+            .par_iter_mut()
+            .zip(self.physics.delta_v.par_iter_mut())
+            .zip(forces.par_iter())
+            .zip(self.flock.agents.par_iter_mut())
+            .for_each(|(((accel, dv), &force), agent)| {
+                *accel = force.clamp_length_max(params.max_force) / params.agent_mass;
+                *dv = *accel * dt;
+                agent.apply_force(force, params);
+                agent.integrate(dt, params);
+            });
+    }
+
+    /*********** Single-threaded implementations ****************** */
+
     #[allow(dead_code)]
     fn generate_forces(&self) -> Vec<Vec2> {
+        let mut ids = Vec::new();
         self.flock
             .agents
             .iter()
             .map(|agent| {
-                let neighbor_ids = self
-                    .spatial
-                    .neighbors_of(agent, self.params.perception_radius);
-
-                let neighbors: Vec<&Agent> = neighbor_ids
-                    .iter()
-                    .filter_map(|id| self.flock.agents.get(*id))
-                    .collect();
+                self.spatial
+                    .neighbors_of(agent, self.params.perception_radius, &mut ids);
 
                 self.rules
                     .iter()
-                    .map(|rule| rule.apply(agent, &neighbors, &self.params))
+                    .map(|rule| rule.apply(agent, &ids, &self.flock.agents, &self.params))
                     .fold(Vec2::ZERO, |acc, f| acc + f)
             })
             .collect()
@@ -121,48 +160,6 @@ impl Simulation {
             .zip(self.physics.delta_v.iter_mut())
             .zip(forces.iter())
             .zip(self.flock.agents.iter_mut())
-            .for_each(|(((accel, dv), &force), agent)| {
-                *accel = force.clamp_length_max(params.max_force) / params.agent_mass;
-                *dv = *accel * dt;
-                agent.apply_force(force, params);
-                agent.integrate(dt, params);
-            });
-    }
-
-    fn par_generate_forces(&self) -> Vec<Vec2> {
-        self.flock
-            .agents
-            .par_iter()
-            .map(|agent| {
-                let neighbor_ids = self
-                    .spatial
-                    .neighbors_of(agent, self.params.perception_radius);
-
-                let neighbors: Vec<&Agent> = neighbor_ids
-                    .iter()
-                    .filter_map(|id| self.flock.agents.get(*id))
-                    .collect();
-
-                self.rules
-                    .iter()
-                    .map(|rule| rule.apply(agent, &neighbors, &self.params))
-                    .fold(Vec2::ZERO, |acc, f| acc + f)
-            })
-            .collect()
-    }
-
-    /// Apply forces to each agent with the corresponding index, saving computed parameters to `Physics`
-    fn par_apply_forces(&mut self, dt: Duration) {
-        let dt = dt.as_secs_f32();
-        let params = &self.params;
-        let forces = &self.physics.forces;
-
-        self.physics
-            .accelerations
-            .par_iter_mut()
-            .zip(self.physics.delta_v.par_iter_mut())
-            .zip(forces.par_iter())
-            .zip(self.flock.agents.par_iter_mut())
             .for_each(|(((accel, dv), &force), agent)| {
                 *accel = force.clamp_length_max(params.max_force) / params.agent_mass;
                 *dv = *accel * dt;

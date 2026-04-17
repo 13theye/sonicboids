@@ -6,7 +6,7 @@ use nannou::prelude::*;
 pub struct GridIndex {
     cell_size: f32,
     /// Flat row-major array of cells: index = row * grid_width + col
-    cells: Vec<Vec<AgentId>>,
+    cells: Vec<Vec<(AgentId, Vec2)>>,
     grid_width: usize,
     grid_height: usize,
     /// Bottom-left corner of the world (bounds.left(), bounds.bottom())
@@ -19,15 +19,16 @@ impl SpatialIndex for GridIndex {
 
         agents.iter().for_each(|a| {
             let idx = self.flat_idx(a.position);
-            self.cells[idx].push(a.id);
+            self.cells[idx].push((a.id, a.position));
         });
     }
 
-    fn neighbors_of(&self, agent: &Agent, radius: f32) -> Vec<AgentId> {
-        let mut neighbors = Vec::new();
+    fn neighbors_of(&self, agent: &Agent, radius: f32, out: &mut Vec<AgentId>) {
+        out.clear();
 
         let cell_radius = (radius / self.cell_size).ceil() as i32;
         let (col, row) = self.cell_coords(agent.position);
+        let r_sq = radius * radius;
 
         for dr in -cell_radius..=cell_radius {
             let r = row + dr;
@@ -39,12 +40,31 @@ impl SpatialIndex for GridIndex {
                 if c < 0 || c >= self.grid_width as i32 {
                     continue;
                 }
+
+                // Skip cells whose nearest point is outside the radius
+                let near_x = agent.position.x.clamp(
+                    self.origin.x + c as f32 * self.cell_size,
+                    self.origin.x + (c + 1) as f32 * self.cell_size,
+                );
+                let near_y = agent.position.y.clamp(
+                    self.origin.y + r as f32 * self.cell_size,
+                    self.origin.y + (r + 1) as f32 * self.cell_size,
+                );
+                let dx = agent.position.x - near_x;
+                let dy = agent.position.y - near_y;
+                if dx * dx + dy * dy > r_sq {
+                    continue;
+                }
+
                 let idx = r as usize * self.grid_width + c as usize;
-                neighbors.extend_from_slice(&self.cells[idx]);
+
+                self.cells[idx].iter().for_each(|(id, pos)| {
+                    if agent.position.distance_squared(*pos) < r_sq {
+                        out.push(*id);
+                    }
+                });
             }
         }
-
-        neighbors
     }
 }
 

@@ -9,7 +9,7 @@ use rayon::prelude::*;
 pub struct GridIndexPar {
     cell_size: f32,
     /// Flat row-major array of cells: index = row * grid_width + col
-    cells: Vec<Vec<AgentId>>,
+    cells: Vec<Vec<(AgentId, Vec2)>>,
     grid_width: usize,
     grid_height: usize,
     /// Bottom-left corner of the world (bounds.left(), bounds.bottom())
@@ -23,11 +23,12 @@ impl SpatialIndex for GridIndexPar {
         self.rebuild_fully_par(agents);
     }
 
-    fn neighbors_of(&self, agent: &Agent, radius: f32) -> Vec<AgentId> {
-        let mut neighbors = Vec::new();
+    fn neighbors_of(&self, agent: &Agent, radius: f32, out: &mut Vec<AgentId>) {
+        out.clear();
 
         let cell_radius = (radius / self.cell_size).ceil() as i32;
         let (col, row) = self.cell_coords(agent.position);
+        let r_sq = radius * radius;
 
         for dr in -cell_radius..=cell_radius {
             let r = row + dr;
@@ -39,12 +40,29 @@ impl SpatialIndex for GridIndexPar {
                 if c < 0 || c >= self.grid_width as i32 {
                     continue;
                 }
+                // Skip cells whose nearest point is outside the radius
+                let near_x = agent.position.x.clamp(
+                    self.origin.x + c as f32 * self.cell_size,
+                    self.origin.x + (c + 1) as f32 * self.cell_size,
+                );
+                let near_y = agent.position.y.clamp(
+                    self.origin.y + r as f32 * self.cell_size,
+                    self.origin.y + (r + 1) as f32 * self.cell_size,
+                );
+                let dx = agent.position.x - near_x;
+                let dy = agent.position.y - near_y;
+                if dx * dx + dy * dy > r_sq {
+                    continue;
+                }
+
                 let idx = r as usize * self.grid_width + c as usize;
-                neighbors.extend_from_slice(&self.cells[idx]);
+                for (id, pos) in &self.cells[idx] {
+                    if agent.position.distance_squared(*pos) < r_sq {
+                        out.push(*id);
+                    }
+                }
             }
         }
-
-        neighbors
     }
 }
 
@@ -88,13 +106,13 @@ impl GridIndexPar {
     fn rebuild_par_assignment(&mut self, agents: &[Agent]) {
         self.cells.iter_mut().for_each(|c| c.clear());
 
-        let assignments: Vec<(usize, AgentId)> = agents
+        let assignments: Vec<(usize, AgentId, Vec2)> = agents
             .par_iter()
-            .map(|a| (self.flat_idx(a.position), a.id))
+            .map(|a| (self.flat_idx(a.position), a.id, a.position))
             .collect();
 
-        assignments.iter().for_each(|(cell_idx, agent_id)| {
-            self.cells[*cell_idx].push(*agent_id);
+        assignments.iter().for_each(|(cell_idx, agent_id, pos)| {
+            self.cells[*cell_idx].push((*agent_id, *pos));
         });
     }
 
@@ -106,30 +124,28 @@ impl GridIndexPar {
     fn rebuild_sorted(&mut self, agents: &[Agent]) {
         self.cells.iter_mut().for_each(|c| c.clear());
 
-        let mut assignments: Vec<(usize, AgentId)> = agents
+        let mut assignments: Vec<(usize, AgentId, Vec2)> = agents
             .par_iter()
-            .map(|a| (self.flat_idx(a.position), a.id))
+            .map(|a| (self.flat_idx(a.position), a.id, a.position))
             .collect();
 
-        assignments.par_sort_unstable_by_key(|(cell_idx, _)| *cell_idx);
+        assignments.par_sort_unstable_by_key(|(cell_idx, _, _)| *cell_idx);
 
-        assignments.iter().for_each(|(cell_idx, agent_id)| {
-            self.cells[*cell_idx].push(*agent_id);
+        assignments.iter().for_each(|(cell_idx, agent_id, pos)| {
+            self.cells[*cell_idx].push((*agent_id, *pos));
         });
     }
 
     /// Rebuild with parallel fold/reduce into per-thread vecs, then merge
-    #[allow(dead_code)]
     fn rebuild_fully_par(&mut self, agents: &[Agent]) {
         let num_cells = self.grid_width * self.grid_height;
 
-        // Each thread folds into its own flat vec, then we merge by summing
-        let merged: Vec<Vec<AgentId>> = agents
+        let merged: Vec<Vec<(AgentId, Vec2)>> = agents
             .par_iter()
             .fold(
                 || vec![Vec::new(); num_cells],
                 |mut local_cells, a| {
-                    local_cells[self.flat_idx(a.position)].push(a.id);
+                    local_cells[self.flat_idx(a.position)].push((a.id, a.position));
                     local_cells
                 },
             )

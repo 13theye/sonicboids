@@ -1,6 +1,6 @@
 //! Rules for agent behavior
 
-use crate::sim::{Agent, SimParams};
+use crate::sim::{Agent, AgentId, SimParams};
 
 use nannou::prelude::*;
 
@@ -14,5 +14,6 @@ pub use separation::Separation;
 /// A SteeringRule defines a behavior for an `Agent`
 pub trait SteeringRule: Send + Sync {
     /// Applies the rule to the `agent`. Returns a force vector.
-    fn apply(&self, agent: &Agent, neighbors: &[&Agent], params: &SimParams) -> Vec2;
+    /// `neighbor_ids` are indices into `agents`.
+    fn apply(&self, agent: &Agent, neighbor_ids: &[AgentId], agents: &[Agent], params: &SimParams) -> Vec2;
 }

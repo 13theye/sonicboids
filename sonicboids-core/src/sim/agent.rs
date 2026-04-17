@@ -2,6 +2,7 @@
 
 use super::{BoundsBehavior, SimParams};
 
+/// Depending on Nannou for convenience
 use nannou::prelude::*;
 
 /// Identifier for the `Agent`
